@@ -10,19 +10,29 @@ class ImportData:
     def __init__(self, data_csv):
         self._time = []
         self._value = []
+        folder_path = './smallData/'
+        self.file = join(folder_path, data_csv)
+        with open(self.file, "r") as fhandle:
+            reader = csv.DictReader(fhandle)
+            for row in reader:
+                self._value.append(row['value'])
+            fhandle.close()
 
         # open file, create a reader from csv.DictReader, and read input times and values
-
+        
     def linear_search_value(self, key_time):
+        pass
         # return list of value(s) associated with key_time
         # if none, return -1 and error message
 
     def binary_search_value(self,key_time):
+        pass
         # optional extra credit
         # return list of value(s) associated with key_time
         # if none, return -1 and error message
 
 def roundTimeArray(obj, res):
+    pass
     # Inputs: obj (ImportData Object) and res (rounding resoultion)
     # objective:
     # create a list of datetime entries and associated values
@@ -36,6 +46,7 @@ def roundTimeArray(obj, res):
 
 
 def printArray(data_list, annotation_list, base_name, key_file):
+    pass
     # combine and print on the key_file
 
 if __name__ == '__main__':
@@ -55,10 +66,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-
+    
     #pull all the folders in the file
-    files_lst = # list the folders
-
+    files_lst = 'foo' # list the folders
+    
 
     #import all the files into a list of ImportData objects (in a loop!)
     data_lst = []
@@ -67,7 +78,8 @@ if __name__ == '__main__':
     # do this in a loop, where you loop through the data_lst
     data_5 = [] # a list with time rounded to 5min
     data_15 = [] # a list with time rounded to 15min
-
+    test_csv = ImportData(args.sort_key)
+    print(test_csv.file)
     #print to a csv file
-    printLargeArray(data_5,files_lst,args.output_file+'_5',args.sort_key)
-    printLargeArray(data_15, files_lst,args.output_file+'_15',args.sort_key)
+    #printArray(data_5,files_lst,args.output_file+'_5',args.sort_key)
+    #printArray(data_15, files_lst,args.output_file+'_15',args.sort_key)
