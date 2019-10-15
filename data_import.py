@@ -11,13 +11,24 @@ class ImportData:
         self._time = []
         self._value = []
         folder_path = './smallData/'
-        self.file = join(folder_path, data_csv)
+        self.file = join(folder_path, data_csv) 
         with open(self.file, "r") as fhandle:
             reader = csv.DictReader(fhandle)
             for row in reader:
-                self._value.append(row['value'])
+                if row['value'] == 'high':
+                    print("Replacing value 'high' with 300")
+                    self._value.append(300)
+                elif row['value'] == 'low':
+                    print("Replacing value 'low' with 40")
+                    self._value.append(40)
+                else:
+                    self._value.append(row['value'])
+                try:
+                    self._time.append(dateutil.parser.parse(row['time']))
+                except ValueError:
+                    raise ValueError('Can`t parse the time!')
+                    print(row['time'])
             fhandle.close()
-
         # open file, create a reader from csv.DictReader, and read input times and values
         
     def linear_search_value(self, key_time):
@@ -68,18 +79,18 @@ if __name__ == '__main__':
 
     
     #pull all the folders in the file
-    files_lst = 'foo' # list the folders
+    folder_path = args.folder_name
+    files_lst = [f for f in listdir(folder_path) if isfile(join(folder_path, f))] # list the folders
     
 
     #import all the files into a list of ImportData objects (in a loop!)
     data_lst = []
-
+    for files in files_lst:
+        data_lst.append(ImportData(folder_path+files))
     #create two new lists of zip objects
     # do this in a loop, where you loop through the data_lst
     data_5 = [] # a list with time rounded to 5min
     data_15 = [] # a list with time rounded to 15min
-    test_csv = ImportData(args.sort_key)
-    print(test_csv.file)
     #print to a csv file
     #printArray(data_5,files_lst,args.output_file+'_5',args.sort_key)
     #printArray(data_15, files_lst,args.output_file+'_15',args.sort_key)
