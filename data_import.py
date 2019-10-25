@@ -36,7 +36,11 @@ class ImportData:
             for row in reader:
                 if (row['time'] == ''):
                     continue
-                time_toadd = (datetime.datetime.strptime(row['time'], '%m/%d/%y %H:%M'))
+                try:
+                    time_toadd = (datetime.datetime.strptime(row['time'], '%m/%d/%y %H:%M'))
+                except ValueError:
+                    print('this time is the wrong format!')
+                    sys.exit(1)
                 try:
                     if row['value'] == 'high':
                         print("Replacing value 'high' with 300")
