@@ -4,123 +4,144 @@ from os import listdir
 from os.path import isfile, join
 import argparse
 import datetime
-
+import math
+import copy
 
 class ImportData:
     def __init__(self, data_csv):
+        self._data_list = []
         self._time = []
         self._value = []
-        self._roundval = []
-        self._roundtime = []
-        self._roundtimeStr = []
+        # Determine if we will average or sum the data collisions later
+        if 'activity' in data_csv:
+            self._type = 0
+        if 'bolus' in data_csv:
+            self._type = 0
+        if 'meal' in data_csv:
+            self._type = 0
+        if 'smbg' in data_csv:
+            self._type = 1
+        if 'hr' in data_csv:
+            self._type = 1
+        if 'cgm' in data_csv:
+            self._type = 1
+        if 'basal' in data_csv:
+            self._type = 1
+
         self.file = data_csv 
+
         with open(self.file, "r") as fhandle:
             reader = csv.DictReader(fhandle)
             for row in reader:
-                if row['value'] == 'high':
-                    print("Replacing value 'high' with 300")
-                    self._value.append(int(300))
-                elif row['value'] == 'low':
-                    print("Replacing value 'low' with 40")
-                    self._value.append(int(40))
-                else:
-                    self._value.append(row['value'])
+                if (row['time'] == ''):
+                    continue
+                time_toadd = (datetime.datetime.strptime(row['time'], '%m/%d/%y %H:%M'))
                 try:
-                    self._time.append(dateutil.parser.parse(row['time']))
+                    if row['value'] == 'high':
+                        print("Replacing value 'high' with 300")
+                        row['value'] = 300
+                    elif row['value'] == 'low':
+                        print("Replacing value 'low' with 40")
+                        row['value'] = 40
+                    
+                    value_toadd = float(row['value'])
+                    # if our number works, add it to the growing array
+                    if (not math.isnan(value_toadd)):
+                        self._value.append(value_toadd)
+                        self._time.append(time_toadd)
                 except ValueError:
-                    raise ValueError('Can`t parse the time!')
-                    print(row['time'])
+                    print("can't parse the time! skipping entry")
             fhandle.close()
-        # Convert the value list to integers, instead of strings
-        for i in range(0, len(self._value)):
-            try:
-                self._value[i] = int(self._value[i])
-            except ValueError:
-                print('invalid value at entry', i, '! Converting to 0...')
-                self._value[i] = 0
-        # open file, create a reader from csv.DictReader, and read input times and values
-        
+        # the data frame might get built backwards depending on the file
+        # so just reverse it if that happens
+
+        if len(self._time) > 0:
+            if self._time[-1] < self._time[0]:
+                self._time.reverse()
+                self._value.reverse()
+
     def linear_search_value(self, key_time):
-        hit = -1
-        # print("this is my range:", range(len(self._roundtime)))
         hits = []
-        for i in range(len(self._roundtime)):
-            curr = self._roundtime[i]
-            if key_time == curr:
+        for i in range(len(self._time)):
+            if self._time[i] == key_time:
                 hits.append(self._value[i])
-        if len(hits) == 1:
-            return hits[0]
-        elif len(hits) > 1:
-            if self.file == './smallData/activity_small.csv':
-                return sum(hits)
-            if self.file == './smallData/bolus_small.csv':
-                return sum(hits)
-            if self.file == './smallData/basal_small.csv':
-                return sum(hits)/len(hits)
-            if self.file == './smallData/cgm_small.csv':
-                return sum(hits)/len(hits)
-            if self.file == './smallData/hr_small.csv':
-                return sum(hits)/len(hits)
-            if self.file == './smallData/meal_small.csv':
-                return sum(hits)
-            if self.file == './smallData/smbg_small.csv':
-                return sum(hits)/len(hits)
-        else:
+        if len(hits) == 0:
+            print ('no results found')
             return -1
+        
+        return hits
         # return list of value(s) associated with key_time
         # if none, return -1 and error message
 
 def roundTimeArray(obj, resolution):
+    # So this is on the example that you guys made, but I'm not sure why... 
+    # I need to make a deep copy of the object
+    # before I can mutate it by rounding the time
+    rounded_obj = copy.deepcopy(obj)
+    round_time = []
+    values = []
+    number_of_times = len(rounded_obj._time)
 
-    for times in obj._time:
-        minminus = datetime.timedelta(minutes = (times.minute % resolution))
-        minplus = datetime.timedelta(minutes=resolution) - minminus
-        #obj._roundval[f] = obj._roundval[f].append(obj.linear_search_value(times))
-        if (times.minute % resolution) <= resolution/2:
-            newtime = times - minminus
+    for i in range(number_of_times):
+        new_time = rounded_obj._time[i]
+        remover = datetime.timedelta(minutes=new_time.minute % resolution,
+                                     seconds=new_time.second)
+        new_time -= remover
+        if (remover >= datetime.timedelta(minutes = math.ceil(resolution/2))):
+            new_time += datetime.timedelta(minutes=resolution)
+        rounded_obj._time[i] = new_time
+    
+    if number_of_times > 0:
+        round_time.append(rounded_obj._time[0])
+        linear_search = rounded_obj.linear_search_value(rounded_obj._time[0])
+        if obj._type == 0:
+            values.append(sum(linear_search))
+        elif obj._type == 1:
+            values.append(sum(linear_search)/len(linear_search))
+
+    for i in range(1, number_of_times):
+        # To avoid duplications, look for where the number changes, and only include
+        # one copy of that time
+        if rounded_obj._time[i] == rounded_obj._time[i - 1]:
+            continue
         else:
-            newtime=times + minplus
-        obj._roundtime.append(newtime)
-        obj._roundtimeStr.append(newtime.strftime("%m/%d/%Y %H:%M"))
+            round_time.append(rounded_obj._time[i])
+            linear_search = rounded_obj.linear_search_value(rounded_obj._time[i])
+            if obj._type == 0:
+                values.append(sum(linear_search))
+            elif obj._type == 1:
+                values.append(sum(linear_search)/len(linear_search))
+    return zip(round_time, values)
+
 
 def printArray(data_list, annotation_list, base_name, key_file):
-    base_data = []
-    key_idx = 0
-    print(annotation_list)
-    print(data_list)
+    data_list_main = []
+    data_list_secondary = []
+    annotation_list_main = []
+    annotation_list_secondary = []
+
     for i in range(len(annotation_list)):
-        print(i)
         if annotation_list[i] == key_file:
-            base_data = zip(data_list[i]._roundtimeStr, data_list[i]._value)
-            print('base data is: '+annotation_list[i])
-            key_idx = i
-            break
-        if i == len(annotation_list):
-            print('Key not found')
+            annotation_list_main.append(annotation_list[i])
+            data_list_main.append(data_list[i])
+        else:
+            annotation_list_secondary.append(annotation_list[i])
+            data_list_secondary.append(data_list[i])
 
-    file=open(base_name+'.csv','w')
-    file.write('time,')
-
-    file.write(annotation_list[key_idx][0:-4]+', ')
-
-    non_key = list(range(len(annotation_list)))
-    non_key.remove(key_idx)
-
-    for idx in non_key:
-        file.write(annotation_list[idx][0:-4]+', ')
-    file.write('\n')
-
-
-    for time, value in base_data:
-        file.write(time+', '+value+', ')
-        for n in non_key:
-            if time in data_list[n]._roundtimeStr:
-                file.write(str(data_list[n].linear_search_value(time))+', ')
-            else:
-                file.write('0, ')
-        file.write('\n')
-    file.close() 
-    # combine and print on the key_file
+    attribute_order = ['time', key_file] + annotation_list_secondary
+    with open(base_name + '.csv', mode = 'w') as out:
+        writer = csv.writer(output, delimiter = ',')
+        writer.writerow(attribute_order)
+        for time, value in data_list_main[0]:
+            other_values = []
+            for data in data_list_secondary:
+                old_len = len(other_values)
+                for zip_time, zip_val in data:
+                    if time == zip_time:
+                        other_values.append(zip_val)
+                    if len(other_values) == old_len:
+                        other_values.append(0)
+                writer.writerow([time, value] + other_values)
 
 if __name__ == '__main__':
 
@@ -128,33 +149,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description= 'A class to import, combine, and print data from a folder.',
     prog= 'dataImport')
 
-    parser.add_argument('folder_name', type = str, help = 'Name of the folder')
-
     parser.add_argument('output_file', type=str, help = 'Name of Output file')
-
-    parser.add_argument('sort_key', type = str, help = 'File to sort on')
-
-    parser.add_argument('--number_of_files', type = int,
-    help = "Number of Files", required = False)
 
     args = parser.parse_args()
 
-    
-    #pull all the folders in the file
-    folder_path = args.folder_name
-    files_lst = [f for f in listdir(folder_path) if isfile(join(folder_path, f))] # list the folders
-    
-
-    #import all the files into a list of ImportData objects (in a loop!)
+    folder_path = './smallData/'
+    files_lst = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
     data_lst = []
     for files in files_lst:
+        print(folder_path)
+        print(files)
         data_lst.append(ImportData(folder_path+files))
-    #create two new lists of zip objects
-    # do this in a loop, where you loop through the data_lst
     data_5 = [] # a list with time rounded to 5min
     data_15 = [] # a list with time rounded to 15min
-    data_5 = roundTimeArray(data_lst[0], 5)
-    data_15 = roundTimeArray(data_lst[0], 15)
+
+    for objs in data_lst:    
+        data_5.append(roundTimeArray(objs, 5))
+    for objs in data_lst:
+        data_15.append(roundTimeArray(objs, 15))
+    
+    
     #print to a csv file
-    printArray(data_5, files_lst,args.output_file+'_5',args.sort_key)
-    printArray(data_15, files_lst,args.output_file+'_15',args.sort_key)
+    printArray(data_5, files_lst, args.output_file+'_5', 'cgm_small.csv')
+    printArray(data_15, files_lst, args.output_file+'_15', 'cgm_small.csv')
