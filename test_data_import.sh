@@ -11,6 +11,3 @@ assert_exit_code 1
 run data_import_test python data_import.py smallData cgm_key cgm_small.csv
 assert_exit_code 0
 
-# we should assert an error if the folder exists but the file doesn't
-run data_import_test python data_import.py smallData test foo.csv
-assert_exit_code 1
