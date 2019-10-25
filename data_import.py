@@ -43,23 +43,45 @@ class ImportData:
     def linear_search_value(self, key_time):
         hit = -1
         # print("this is my range:", range(len(self._roundtime)))
-        for i in range(len(self._time)):
-            curr = self._time[i]
-            # print("this is my i", i)
+        hits = []
+        for i in range(len(self._roundtime)):
+            curr = self._roundtime[i]
             if key_time == curr:
-                return self._value[i]
-        return -1
+                hits.append(self._value[i])
+        if len(hits) == 1:
+            return hits[0]
+        elif len(hits) > 1:
+            if self.file == './smallData/activity_small.csv':
+                return sum(hits)
+            if self.file == './smallData/bolus_small.csv':
+                return sum(hits)
+            if self.file == './smallData/basal_small.csv':
+                return sum(hits)/len(hits)
+            if self.file == './smallData/cgm_small.csv':
+                return sum(hits)/len(hits)
+            if self.file == './smallData/hr_small.csv':
+                return sum(hits)/len(hits)
+            if self.file == './smallData/meal_small.csv':
+                return sum(hits)
+            if self.file == './smallData/smbg_small.csv':
+                return sum(hits)/len(hits)
+        else:
+            return -1
         # return list of value(s) associated with key_time
         # if none, return -1 and error message
 
-    def binary_search_value(self,key_time):
-        pass
-        # optional extra credit
-        # return list of value(s) associated with key_time
-        # if none, return -1 and error message
+def roundTimeArray(obj, resolution):
 
-def roundTimeArray(obj, res):
-    pass
+    for times in obj._time:
+        minminus = datetime.timedelta(minutes = (times.minute % resolution))
+        minplus = datetime.timedelta(minutes=resolution) - minminus
+        #obj._roundval[f] = obj._roundval[f].append(obj.linear_search_value(times))
+        if (times.minute % resolution) <= resolution/2:
+            newtime = times - minminus
+        else:
+            newtime=times + minplus
+        obj._roundtime.append(newtime)
+        obj._roundtimeStr.append(newtime.strftime("%m/%d/%Y %H:%M"))
 
 def printArray(data_list, annotation_list, base_name, key_file):
     base_data = []
