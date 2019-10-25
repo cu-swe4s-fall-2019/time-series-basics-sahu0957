@@ -19,10 +19,10 @@ class ImportData:
             for row in reader:
                 if row['value'] == 'high':
                     print("Replacing value 'high' with 300")
-                    self._value.append(300)
+                    self._value.append(int(300))
                 elif row['value'] == 'low':
                     print("Replacing value 'low' with 40")
-                    self._value.append(40)
+                    self._value.append(int(40))
                 else:
                     self._value.append(row['value'])
                 try:
@@ -31,6 +31,13 @@ class ImportData:
                     raise ValueError('Can`t parse the time!')
                     print(row['time'])
             fhandle.close()
+        # Convert the value list to integers, instead of strings
+        for i in range(0, len(self._value)):
+            try:
+                self._value[i] = int(self._value[i])
+            except ValueError:
+                print('invalid value at entry', i, '! Converting to 0...')
+                self._value[i] = 0
         # open file, create a reader from csv.DictReader, and read input times and values
         
     def linear_search_value(self, key_time):

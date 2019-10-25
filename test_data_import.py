@@ -20,7 +20,7 @@ class TestDataImport(unittest.TestCase):
         # from the file activity_small.csv
 
         r = data_import.ImportData('./smallData/activity_small.csv')
-        self.assertEqual(r._value[0], '0')
+        self.assertEqual(r._value[0], 0)
     
     def test_import_data_lowhigh(self):
         # high and low strings should be replaced with
@@ -59,9 +59,6 @@ class TestDataImport(unittest.TestCase):
         # to return a double digit entry
         r = data_import.ImportData('./smallData/activity_small.csv')
         w = r.linear_search_value(r._time[14])
-        print(r._value[14])
-        print(w)
-        print(type(w))
         self.assertEqual(r._value[14], w)
 
 if __name__ == '__main__':
