@@ -1,5 +1,6 @@
 import csv
 import dateutil.parser
+import os.path
 from os import listdir
 from os.path import isfile, join
 import argparse
@@ -130,7 +131,7 @@ def printArray(data_list, annotation_list, base_name, key_file):
 
     attribute_order = ['time', key_file] + annotation_list_secondary
     with open(base_name + '.csv', mode = 'w') as out:
-        writer = csv.writer(output, delimiter = ',')
+        writer = csv.writer(out, delimiter = ',')
         writer.writerow(attribute_order)
         for time, value in data_list_main[0]:
             other_values = []
@@ -146,22 +147,38 @@ def printArray(data_list, annotation_list, base_name, key_file):
 if __name__ == '__main__':
 
     #adding arguments
-    parser = argparse.ArgumentParser(description= 'A class to import, combine, and print data from a folder.',
+    parser = argparse.ArgumentParser(description= 'Combines data from a time series into a single file.',
     prog= 'dataImport')
-
+    
+    parser.add_argument('folder_name', type=str, help = 'Name of input folder')
     parser.add_argument('output_file', type=str, help = 'Name of Output file')
+    parser.add_argument('sort_key', type=str, help = 'File to sort from')
 
     args = parser.parse_args()
+    
+    # Pull the files together from the folder
+    try:
+        files_lst = listdir(args.folder_name)
+    except FileNotFoundError as e:
+        print('Folder not found')
+        sys.exit(1)
 
-    folder_path = './smallData/'
-    files_lst = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
+    # Combine files into a list of ImportData objects
     data_lst = []
     for files in files_lst:
-        print(folder_path)
-        print(files)
-        data_lst.append(ImportData(folder_path+files))
+        data_lst.append(ImportData(args.folder_name + '/' + files))
+
+    if len(data_lst) == 0:
+        print('data list is empty!')
+        sys.exit(1)
+
     data_5 = [] # a list with time rounded to 5min
     data_15 = [] # a list with time rounded to 15min
+    
+    for i in files_lst:
+        if os.path.exists(args.folder_name + '/' + args.sort_key) == False:
+            print('Key file not found')
+            sys.exit(1)
 
     for objs in data_lst:    
         data_5.append(roundTimeArray(objs, 5))
@@ -170,5 +187,6 @@ if __name__ == '__main__':
     
     
     #print to a csv file
-    printArray(data_5, files_lst, args.output_file+'_5', 'cgm_small.csv')
-    printArray(data_15, files_lst, args.output_file+'_15', 'cgm_small.csv')
+    
+    printArray(data_5, files_lst, args.output_file+'_5', args.sort_key)
+    printArray(data_15, files_lst, args.output_file+'_15', args.sort_key)
