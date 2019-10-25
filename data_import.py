@@ -162,7 +162,11 @@ if __name__ == '__main__':
     except FileNotFoundError as e:
         print('Folder not found')
         sys.exit(1)
-
+    
+    for i in files_lst:
+        if os.path.exists(args.folder_name + '/' + args.sort_key) == False:
+            print('Key file not found')
+            sys.exit(1)
     # Combine files into a list of ImportData objects
     data_lst = []
     for files in files_lst:
@@ -174,11 +178,6 @@ if __name__ == '__main__':
 
     data_5 = [] # a list with time rounded to 5min
     data_15 = [] # a list with time rounded to 15min
-    
-    for i in files_lst:
-        if os.path.exists(args.folder_name + '/' + args.sort_key) == False:
-            print('Key file not found')
-            sys.exit(1)
 
     for objs in data_lst:    
         data_5.append(roundTimeArray(objs, 5))
