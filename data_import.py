@@ -28,16 +28,17 @@ class ImportData:
                 try:
                     self._time.append(dateutil.parser.parse(row['time']))
                 except ValueError:
-                    print('Can`t parse the time!')
+                    raise ValueError('Can`t parse the time!')
                     print(row['time'])
             fhandle.close()
         # open file, create a reader from csv.DictReader, and read input times and values
         
     def linear_search_value(self, key_time):
         hit = -1
-        for i in range(len(self._roundtime)):
-            curr = self._roundtime[i]
-            print(i)
+        # print("this is my range:", range(len(self._roundtime)))
+        for i in range(len(self._time)):
+            curr = self._time[i]
+            # print("this is my i", i)
             if key_time == curr:
                 return self._value[i]
         return -1
@@ -51,46 +52,7 @@ class ImportData:
         # if none, return -1 and error message
 
 def roundTimeArray(obj, res):
-    f = 0
-    for times in obj._time:
-        minminus = datetime.timedelta(minutes = (times.minute % res))
-        minplus = datetime.timedelta(minutes=res) - minminus
-        if (times.minute % res) <= res/2:
-            newtime = times - minminus
-        else:
-            newtime = times + minplus
-        obj._roundtime.append(newtime)
-        obj._roundtimeStr.append(newtime.strftime("%m/%d/%Y %H:%M"))
-        obj._roundval.append(obj.linear_search_value(newtime))
-        if len(obj._roundval[f]) > 1:
-            if obj.file == './smallData/activity_small.csv':
-                print(obj._roundval)
-                #obj._roundval[i] = sum(int(obj._roundval[i]))
-            if obj.file == './smallData/basal_small.csv':
-                obj._roundval[f] = (sum(obj._roundval[f])/len(obj._roundval[f]))
-            if obj.file == './smallData/bolus_small.csv':
-                obj._roundval[f] = sum(obj._roundval[f])
-            if obj.file == './smallData/cgm_small.csv':
-                obj._roundval[f] = (sum(obj._roundval[f])/len(obj._roundval[f]))
-            if obj.file == './smallData/hr_small.csv':
-                obj._roundval[f] = (sum(obj._roundval[f])/len(obj._roundval[f]))
-            if obj.file == './smallData/meal_small.csv':
-                obj._roundval[f] = sum(obj._roundval[f])
-            if obj.file == './smallData/smbg_small.csv':
-                obj._roundval[f] = (sum(obj._roundval[f])/len(obj._roundval[f]))
-        f += 1
-    return(obj._roundval, obj._roundtime)
-    # Inputs: obj (ImportData Object) and res (rounding resoultion)
-    # objective:
-    # create a list of datetime entries and associated values
-    # with the times rounded to the nearest rounding resolution (res)
-    # ensure no duplicated times
-    # handle duplicated values for a single timestamp based on instructions in
-    # the assignment
-    # return: iterable zip object of the two lists
-    # note: you can create additional variables to help with this task
-    # which are not returned
-
+    pass
 
 def printArray(data_list, annotation_list, base_name, key_file):
     base_data = []
