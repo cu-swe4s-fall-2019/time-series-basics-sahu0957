@@ -18,3 +18,4 @@ script:
     - python test_data_import.py
     - bash test_data_import.sh
     - bash test_pandas_import.sh
+    - pycodestyle pandas_import.py
